@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# habit-grid
 
-## Getting Started
+GitHub のコントリビューションカレンダーが好きなので、同じ見た目で任意の習慣(英語学習に
+限らず何でも)を記録できるツールを作りました。
 
-First, run the development server:
+## 機能
+
+- 習慣を追加し、「今日を記録」ボタンでワンクリックで記録
+- GitHub 風のコントリビューションカレンダー(過去53週間)で達成状況を可視化
+- 習慣ごとに独立したカレンダーを持てる(複数の目標を同時に追跡可能)
+
+## 技術構成
+
+- [Next.js](https://nextjs.org/) 16 (App Router, Turbopack) / React 19 / TypeScript
+- PostgreSQL + [Prisma](https://www.prisma.io/) 7 (`@prisma/adapter-pg` 経由)
+- 認証: 単一ユーザー向けの共有パスワード + 署名付きセッションCookie
+  (このアプリはユーザーが自分一人しかいないため、フル機能の認証システムは
+  過剰と判断し、`proxy.ts` でシンプルに保護しています)
+
+## ローカルで動かす
 
 ```bash
+docker compose up -d          # Postgres を起動
+cp .env.example .env.local    # DATABASE_URL, APP_PASSWORD, SESSION_SECRET を設定
+npx prisma migrate dev
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+http://localhost:3001 で確認できます。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`SESSION_SECRET` は以下で生成できます:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+openssl rand -hex 32
+```
 
-## Learn More
+## デプロイ
 
-To learn more about Next.js, take a look at the following resources:
+Vercel + 本番用 Postgres(Vercel Storage の Neon 連携など)を想定しています。
+デプロイ先で以下の環境変数を設定してください。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `DATABASE_URL`
+- `APP_PASSWORD`
+- `SESSION_SECRET`
