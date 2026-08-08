@@ -4,7 +4,7 @@ import { isValidSessionCookieValue, SESSION_COOKIE_NAME } from "@/lib/auth";
 // Runs on the Node.js runtime (not Edge) so lib/auth.ts can use Node's
 // crypto module directly instead of the Web Crypto API.
 export const config = {
-  matcher: ["/((?!login|api/login|_next/static|_next/image|favicon.ico).*)"]
+  matcher: ["/((?!login|demo|api/login|_next/static|_next/image|favicon.ico).*)"],
 };
 
 export function proxy(request: NextRequest) {
