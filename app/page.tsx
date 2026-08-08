@@ -1,69 +1,134 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import ContributionCalendar from "@/app/components/ContributionCalendar";
+import { todayLocalDateString } from "@/lib/date";
+
+type Habit = { id: string; name: string; color: string; dates: string[] };
 
 export default function Home() {
+  const router = useRouter();
+  const [habits, setHabits] = useState<Habit[] | null>(null);
+  const [newName, setNewName] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function loadHabits() {
+    const res = await fetch("/api/habits");
+    if (res.ok) setHabits(await res.json());
+  }
+
+  useEffect(() => {
+    loadHabits();
+  }, []);
+
+  async function addHabit(e: React.FormEvent) {
+    e.preventDefault();
+    const name = newName.trim();
+    if (!name) return;
+    setNewName("");
+    await fetch("/api/habits", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    loadHabits();
+  }
+
+  async function toggleToday(habit: Habit) {
+    setBusyId(habit.id);
+    const today = todayLocalDateString();
+    const doneToday = habit.dates.includes(today);
+    try {
+      await fetch(`/api/habits/${habit.id}/entries`, {
+        method: doneToday ? "DELETE" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: today }),
+      });
+      await loadHabits();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function removeHabit(id: string) {
+    if (!confirm("この習慣を削除しますか？記録もすべて削除されます。")) return;
+    await fetch(`/api/habits/${id}`, { method: "DELETE" });
+    loadHabits();
+  }
+
+  async function logout() {
+    await fetch("/api/logout", { method: "POST" });
+    router.push("/login");
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="mx-auto max-w-3xl px-6 py-10">
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-xl font-semibold">habit-grid</h1>
+        <button onClick={logout} className="text-sm text-gray-500 hover:text-gray-800">
+          ログアウト
+        </button>
+      </div>
+
+      <form onSubmit={addHabit} className="mb-8 flex gap-2">
+        <input
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          placeholder="新しい習慣を追加 (例: 英語学習)"
+          className="flex-1 rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        <button
+          type="submit"
+          className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+        >
+          追加
+        </button>
+      </form>
+
+      {habits === null && <p className="text-sm text-gray-500">読み込み中...</p>}
+      {habits !== null && habits.length === 0 && (
+        <p className="text-sm text-gray-500">
+          まだ習慣がありません。上のフォームから追加してください。
+        </p>
+      )}
+
+      <div className="space-y-8">
+        {habits?.map((habit) => {
+          const today = todayLocalDateString();
+          const doneToday = habit.dates.includes(today);
+          return (
+            <div key={habit.id} className="rounded-lg border p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="font-medium">{habit.name}</h2>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-500">{habit.dates.length}日達成</span>
+                  <button
+                    onClick={() => toggleToday(habit)}
+                    disabled={busyId === habit.id}
+                    className={`rounded px-3 py-1.5 text-sm font-medium disabled:opacity-50 ${
+                      doneToday
+                        ? "bg-green-100 text-green-800 hover:bg-green-200"
+                        : "bg-green-600 text-white hover:bg-green-700"
+                    }`}
+                  >
+                    {doneToday ? "今日: 達成済み ✓" : "今日を記録"}
+                  </button>
+                  <button
+                    onClick={() => removeHabit(habit.id)}
+                    className="text-xs text-gray-400 hover:text-red-600"
+                  >
+                    削除
+                  </button>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <ContributionCalendar dates={habit.dates} color={habit.color} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
