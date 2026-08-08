@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Habit {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#39d353")
+  createdAt DateTime @default(now())
+  entries   Entry[]
+}
+
+model Entry {
+  id      String   @id @default(cuid())
+  habitId String
+  habit   Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  // Calendar date only (no time-of-day); stored as a date string (YYYY-MM-DD)
+  // so "today" is unambiguous regardless of timezone-of-server vs timezone-of-user.
+  date    String
+
+  @@unique([habitId, date])
+}
