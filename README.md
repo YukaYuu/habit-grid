@@ -1,7 +1,6 @@
 # habit-grid
 
-GitHub のコントリビューションカレンダーが好きなので、同じ見た目で任意の習慣(英語学習に
-限らず何でも)を記録できるツールを作りました。
+GitHub のコントリビューションカレンダーが好きなので、似たような見た目で任意の習慣を記録できるツールを作りました。
 
 ## 機能
 
@@ -14,8 +13,6 @@ GitHub のコントリビューションカレンダーが好きなので、同�
 - [Next.js](https://nextjs.org/) 16 (App Router, Turbopack) / React 19 / TypeScript
 - PostgreSQL + [Prisma](https://www.prisma.io/) 7 (`@prisma/adapter-pg` 経由)
 - 認証: 単一ユーザー向けの共有パスワード + 署名付きセッションCookie
-  (このアプリはユーザーが自分一人しかいないため、フル機能の認証システムは
-  過剰と判断し、`proxy.ts` でシンプルに保護しています)
 
 ## ローカルで動かす
 
